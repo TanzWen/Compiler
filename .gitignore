@@ -1,0 +1,60 @@
+*.txt
+!CMakeLists.txt
+# CMake build directory
+build/
+
+# Ignore object files, executables, and libraries
+*.o
+*.obj
+*.exe
+*.dll
+*.so
+*.dylib
+
+# IDE generated files
+*.dsw
+*.sln
+*.vcxproj
+*.vcproj
+*.user
+*.aps
+*.ncb
+*.suo
+*.opensdf
+*.cproject
+*.project
+*.workspace
+
+# Visual Studio Code generated files
+.vscode/
+*.vscode/
+*.code-workspace
+
+# Text editor generated files
+*~
+
+# Qt project files
+*.pro.user
+*.qmake.stash
+
+# Miscellaneous files
+*.log
+*.bin
+*.hex
+*.iml
+*.ipr
+*.iws
+*.swp
+*.swo
+
+# Ignore macOS metadata and resource forks
+.DS_Store
+._*
+*.Spotlight-V100
+*.Trashes
+Icon?
+
+# Ignore Windows thumbnail cache files
+Thumbs.db
+ehthumbs.db
+ehthumbs_vista.db
