@@ -9,10 +9,10 @@ int str::priority(char c)
         return 2;
     else if (c == '|')
         return 1;
-    else if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z'))
-        return 0; // 字母为0
-    else
+    else if (c == '('||c==')')
         return -1;
+    else
+        return 0; // 字母为0
 }
 
 /**将中缀表达式标准化**/
@@ -23,20 +23,18 @@ string str::std_in_exp(string s)
     for (int i = 1; i < s.length(); i++)
     { // 从第二个字符开始遍历
         char c = s[i];
-        if ((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || c == '(')
-        { // 当前字符为字母或者左括号
-            if ((s[i - 1] >= 'a' && s[i - 1] <= 'z') || (s[i - 1] >= 'A' && s[i - 1] <= 'Z') || s[i - 1] == '`' || s[i - 1] == ')')
-            { // 当前字符前一个字母为1.字母2.重复运算3.右括号时添加乘号
+        if(c==')'||c=='*'||c=='`'||c=='|')
+            result += c;
+        else
+        {
+            if(s[i - 1]=='('||s[i - 1]=='|'||s[i - 1]=='*')
+                result += c;
+            else
+                { // 当前字符前一个字母为1.字母2.重复运算3.右括号时添加乘号
                 result += '*';
                 result += c;
             }
-            else
-            {
-                result += c;
-            }
         }
-        else
-            result += c;
     }
     return result;
 }

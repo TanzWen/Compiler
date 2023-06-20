@@ -10,10 +10,39 @@
 #include <cstdio>
 
 #include "str.h"
-#include "state.h"
-#include "edge.h"
 
 using namespace std;
+
+class edge
+{
+public:
+    int id;
+    string path;
+    edge()
+    {
+        id = -1;
+        path = "";
+    }
+    edge(int id, string path)
+    {
+        this->id = id;
+        this->path = path;
+    }
+};
+class head_node
+{
+public:
+    int id;
+    bool is_final;
+    vector<edge *> next;
+    set<int> include;
+
+    head_node()
+    {
+        id = -1;
+        is_final = false;
+    }
+};
 
 class NFA
 {
@@ -21,13 +50,11 @@ protected:
     fstream nfa_file;            // 可视化输出的文件
     string post_exp;             // 需要转化的后缀表达式
     string in_exp;               // 中缀表达式
-    state start;                 // 起始状态
-    state end;                   // 终止状态
     set<char> letter;            // 字符集
     int state_num;               // 状态数量
-    vector<state> state_vector;  // 状态集合
-    vector<edge> edge_vector;    // 边集合
-    stack<pair<state, state>> s; // 生成nfa时所需的栈
+
+    vector<head_node> nfa_graph;
+    int start_id;
 
     void letter_set(); // 获取字符集
     void re_2_nfa();   // 正则表达式转nfa

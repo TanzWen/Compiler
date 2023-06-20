@@ -1,108 +1,99 @@
 #include "DFA.h"
+#define eps "\u03b5"
 
-vector<state> DFA::find_closures(state &s)
-{ // 从当前节点找闭包
-    vector<state> closure;
-    closure.push_back(s);
-    queue<state> q;
-    q.push(s);
+set<int> DFA::find_closures(int id)
+{
+    set<int> closure;
+    closure.insert(id);
+    queue<int> q;
+    q.push(id);
     while (!q.empty())
     {
-        for (edge &i : edge_vector)
+        for (auto &n : nfa_graph[q.front()].next)
         {
-            if (i.from.id == q.front().id && i.info == '#')
+            if (!closure.count(n->id) && n->path == eps)
             {
-                bool flag = false;
-                for (state &j : closure)
-                {// 防止在nfa中形成环
-                    if (j.id == i.to.id)
-                        flag = true;
-                }
-                if (!flag)
-                {
-                    q.push(i.to);
-                    closure.push_back(i.to);
-                }
+                q.push(n->id);
+                closure.insert(n->id);
             }
         }
         q.pop();
     }
     return closure;
 }
-int DFA::is_count(state s)
-{ // 判断当前状态是否存在
-    for (state i : dfa_state)
-    {
-        if (i.equals(s))
-            return i.id;
-    }
-    return -1;
-}
-int DFA::is_count_min(state s)
-{ // 判断当前状态是否存在
-    for (state i : min_dfa_state)
-    {
-        if (i.id == s.id)
-            return i.id;
-    }
-    return -1;
-}
-state DFA::count_id(state s)
-{ // 判断当前状态是否存在
-    for (state i : dfa_state)
-    {
-        if (i.equals(s))
-            return i;
-    }
-    state a(-1);
-    return a;
-}
+
 void DFA::nfa_2_dfa()
 {
-    vector<state> v = find_closures(start);
-    state s(dfa_state_num++, v);
-    dfa_start = s;
-    // start=s;
-    temp.push(s);
-    dfa_state.push_back(s);
 
-    while (!temp.empty())
+    set<int> x = find_closures(start_id);
+
+    head_node h;
+    h.id = dfa_graph.size();
+    start_id = h.id;
+    h.include = x;
+
+    // start=s;
+
+    queue<int> temp_queue;
+    temp_queue.push(h.id);
+
+    dfa_graph.push_back(h);
+
+    while (!temp_queue.empty())
     {
-        for (char c : letter)
-        {                                      // 字符集中每个字符的路径
-            state temp_state(dfa_state_num++); // 新建一个状态
-            for (edge i : edge_vector)
-            { // 遍历所有边
-                if (i.info == c && temp.front().is_count(i.from.id))
-                { // 边上有当前字符并且来自队列头的闭包
-                    v = find_closures(i.to);
-                    temp_state.add_state(v);
+        int current_id = temp_queue.front();
+        temp_queue.pop();
+        for (char ch : letter)
+        {
+            string c = "";
+            c += ch;
+            set<int> temp_set;
+            for (int id : dfa_graph[current_id].include)
+            {
+                for (auto &n : nfa_graph[id].next)
+                {
+                    if (n->path == c)
+                    {
+                        set<int> s = find_closures(n->id);
+                        temp_set.insert(s.begin(), s.end());
+                    }
                 }
             }
-            if (temp_state.state_set.empty())
+            if (temp_set.empty())
+                continue;
+            bool flag = false;
+            for (auto &h : dfa_graph)
             {
-                dfa_state_num--;
-                continue; // 没找到到达闭包
+                if (h.include == temp_set)
+                {
+                    flag = true;
+                    edge *n = new edge(h.id, c);
+                    dfa_graph[current_id].next.push_back(n);
+                    break;
+                }
             }
-            if (is_count(temp_state) < 0)
-            { // 如果当前状态不存在则入队列，并记录
-                dfa_state.push_back(temp_state);
-                temp.push(temp_state);
+            if (!flag)
+            {
+                head_node h;
+                h.id = dfa_graph.size();
+                h.include = temp_set;
+                dfa_graph.push_back(h);
+                edge *n = new edge(h.id, c);
+                dfa_graph[current_id].next.push_back(n);
+                temp_queue.push(h.id);
             }
-            else
-            { // 存在计数减1，找到已存在的序号
-                dfa_state_num--;
-                temp_state = count_id(temp_state);
-            }
-            edge e(temp.front(), temp_state, c); // 新建边
-            dfa_edge.push_back(e);
         }
-        temp.pop();
     }
-    for (state &i : dfa_state)
+    for (auto &he : dfa_graph)
     {
-        if (i.is_count(end.id))
-            i.set_is_final(true);
+        for (auto &n : he.include)
+        {
+            if (nfa_graph[n].is_final)
+            {
+                he.is_final = true;
+                break;
+            }
+        }
     }
 }
 
@@ -110,41 +101,14 @@ DFA::DFA(string pe) : NFA(pe)
 {
     dfa_state_num = 0;
     nfa_2_dfa();
-    dfa_state_num = dfa_state.size();
     min_dfa();
 }
-void DFA::show_closures()
+DFA::DFA(string pe, string name) : NFA(pe),token_name(name)
 {
-    vector<state> v;
-    v = find_closures(start);
-    for (state i : v)
-    {
-        cout << i.id << endl;
-    }
+    dfa_state_num = 0;
+    nfa_2_dfa();
+    min_dfa();
 }
-// void DFA::show_dfa()
-// {
-//     for (state &i : min_dfa_state)
-//     {
-//         cout << i.id << " ";
-//     }
-//     cout << endl;
-//     for (edge &i : min_dfa_edge)
-//     {
-//         /* F -> G [label=m]; */
-//         // cout << i.from.id << "--" << i.info << "-->" << i.to.id << endl;
-//         char c = i.info;
-//         if (c == '#')
-//             c = '$';
-//         cout << i.from.id << " -> " << i.to.id << " [label=" << c << "];" << endl;
-//     }
-//     cout << "begin:" << dfa_start.id << endl;
-//     for (state &i : min_dfa_state)
-//     {
-//         if (i.is_final)
-//             cout << "end:" << i.id << endl;
-//     }
-// }
 void DFA::show_dfa()
 {
     string file_name = "output/DFA.dot";
@@ -155,33 +119,21 @@ void DFA::show_dfa()
              << "rankdir = LR;" << endl
              << "label = \"DFA:" + in_exp + "\";" << endl;
     ;
-    // for (state &i : min_dfa_state)
-    // {
-    //     cout << i.id << " ";
-    // }
     cout << endl;
-    for (edge &i : min_dfa_edge)
+
+    for (auto &i : min_dfa_graph)
     {
-        // cout << i.from.id << "--" << i.info << "-->" << i.to.id << endl;
-        char c = i.info;
-        if (c == '#')
-            c = '0';
-
-        // cout << i.from.id << " -> " << i.to.id << " [label=" << c << "];" << endl;
-        dfa_file << i.from.id << " -> " << i.to.id << " [label=" << c << "];" << endl;
-
-        if (i.to.is_final)
-            dfa_file << i.to.id << " [shape=doublecircle];" << endl;
+        for (edge *j : i.next)
+        {
+            cout << i.id << " -> " << j->id << " [label=" << j->path << "];" << endl;
+            dfa_file << i.id << " -> " << j->id << " [label=" << j->path << "];" << endl;
+        }
+        if (i.is_final)
+            dfa_file << i.id << " [shape=doublecircle];" << endl;
     }
     dfa_file << "}" << endl;
     // system(("dot -Tpdf "+file_name+" -o NFA.pdf").c_str());
     // cout << "begin:" << start.id << endl;
-    for (state &i : min_dfa_state)
-    {
-        if (i.is_final)
-            break;
-        // cout << "end:" << i.id << endl;
-    }
     cout << "Completed!" << endl;
     dfa_file.close();
 }
@@ -197,108 +149,107 @@ struct VectorHash
         return seed;
     }
 };
+string DFA::get_token_name()
+{
+    return token_name;
+}
 void DFA::min_dfa()
 {
-    vector<vector<int>> matrix(letter.size() + 1, vector<int>(dfa_state_num, -1)); // 初始化row*column二维动态数组，初始化值为0
-    for (state i : dfa_state)
-    { // 初始化矩阵
-        if (i.is_final)
-            matrix[0][i.id] = 1;
-        else
-            matrix[0][i.id] = 0;
-    }
-    vector<int> temp(dfa_state_num);
-    while (matrix[0] != temp)
+    unordered_map<string, int> l;
+    int k = 1;
+    for (char c : letter)
     {
-        temp.clear();
-        for (edge e : dfa_edge)
-        { // 根据边的info、from、to填写二维数组
-            matrix[distance(letter.begin(), letter.find(e.info)) + 1][e.from.id] = matrix[0][e.to.id];
+        string ch = "";
+        ch += c;
+        l[ch] = k;
+        k++;
+    }
+    vector<vector<int>> mat(letter.size() + 1, vector<int>(dfa_graph.size(), -1));
+    for (int i = 0; i < dfa_graph.size(); i++)
+    {
+        mat[0][i] = dfa_graph[i].is_final;
+    }
+    vector<int> temp_vector;
+    while (temp_vector != mat[0])
+    {
+        temp_vector.clear();
+        for (auto &i : dfa_graph)
+        {
+            for (auto &j : i.next)
+            {
+                mat[l[j->path]][i.id] = mat[0][j->id];
+            }
         }
         int adj = 0;
         unordered_map<vector<int>, int, VectorHash> map;
-        for (int i = 0; i < dfa_state_num; i++)
+        for (int i = 0; i < dfa_graph.size(); i++)
         { // 求下一个数组
             vector<int> te;
-            for (int j = 0; j < matrix.size(); j++)
+            for (int j = 0; j < mat.size(); j++)
             {
-                te.push_back(matrix[j][i]);
+                te.push_back(mat[j][i]);
             }
             if (map.find(te) == map.end())
             { // 不存在
                 map[te] = adj;
                 adj++;
             }
-            temp.push_back(map[te]);
+            temp_vector.push_back(map[te]);
         }
-        matrix[0].swap(temp);
+        mat[0].swap(temp_vector);
     }
-    vector<bool> vb(matrix[0].size(), false);
-    for (int i : matrix[0])
+    for (int i = 0; i < dfa_graph.size(); i++)
     {
-        vb[i] = true;
-    }
-    for (int i = 0; i < matrix[0].size(); i++)
-    {
-        if (vb[i])
+        head_node head;
+        head.id = mat[0][i];
+        head.is_final = dfa_graph[i].is_final;
+
+        for (char c : letter)
         {
-            state s(i);
-            min_dfa_state.push_back(s);
-        }
-    }
-    for (state i : dfa_state)
-    {
-        if (i.is_final)
-            min_dfa_state[matrix[0][i.id]].set_is_final(true);
-    }
-    vector<char> le;
-    for (char c : letter)
-        le.push_back(c);
-    for (int i = 1; i < matrix.size(); i++)
-    {
-        for (int j = 0; j < matrix[0].size(); j++)
-        {
-            // 使用迭代器遍历 set 中的元素
-            set<char>::iterator it = letter.begin();
-            for (int m = 0; m < i - 2 && it != letter.end(); ++m, ++it)
-                ;
-            char c = *it;
-            if (matrix[i][j] != -1)
+            string ch = "";
+            ch += c;
+            if (mat[l[ch]][i] != -1)
             {
-                edge ed(min_dfa_state.at(matrix[0][j]), min_dfa_state.at(matrix[i][j]), le[i - 1]);
-                bool f = false;
-                for (edge E : min_dfa_edge)
-                {
-                    if (E == ed)
-                    {
-                        f = true;
-                        break;
-                    }
-                }
-                if (!f)
-                    min_dfa_edge.push_back(ed);
+                edge *n = new edge(mat[l[ch]][i], ch);
+                head.next.push_back(n);
             }
+        }
+        bool flag = false;
+        for (auto &h : min_dfa_graph)
+        {
+            if (h.id == head.id)
+            {
+                flag = true;
+                break;
+            }
+        }
+        if (!flag)
+        {
+            min_dfa_graph.push_back(head);
         }
     }
 }
 bool DFA::check(string str)
 {
-    state &s=dfa_start;
-    bool flag=false;
-    for(char c:str)
+    int now = start_id;
+    for (char c : str)
     {
-        for(edge &e:min_dfa_edge)
+        string ch="";
+        ch+=c;
+        bool flag = false;
+        for (auto &i : min_dfa_graph[now].next)
         {
-            if(e.from.id==s.id && e.info==c)
+            if (i->path == ch)
             {
-                flag=true;
-                s=e.to;
+                now = i->id;
+                flag = true;
                 break;
             }
         }
-        if(!flag) return flag;
-        flag=false;
+        if (!flag)
+        {
+            return false;
+        }
     }
-    //if(!flag)return flag;
-    return s.is_final;
+    return min_dfa_graph[now].is_final;
 }
