@@ -1,0 +1,42 @@
+<Function-Definition> -> <Modifier-Closure> <Type> <Variable> ( <Parameter-Declaration> ) { <Function-Block> }
+<Modifier-Closure> -> <Modifier> <Modifier-Closure> | ε
+<Modifier> -> <describe>
+<describe> -> const | static | extern
+<Type> -> type <Pointer>
+<Pointer> -> <Star-Closure>
+<Star-Closure> -> <Star> <Star-Closure> | ε
+<Star> -> *
+<Variable> -> <Identifier> <Array-Subscript>
+<Identifier> -> id
+<Array-Subscript> -> [ <Factors> ] | ε
+<Factors> -> ( <Expression> ) | <Variable> | <Number>
+<Number> -> digit
+<Expression> -> <Factor> <Term>
+<Factor> -> <Factors> <Factor-Recursive>
+<Factor-Recursive> -> * <Factors> <Factor-Recursive> | / <Factors> <Factor-Recursive> | ε
+<Term> -> + <Factor> <Term> | - <Factor> <Term> | ε
+<Parameter-Declaration> -> <Declaration> <Declaration-Closure> | ε
+<Declaration> -> <Modifier-Closure> <Type> <Variable> <Initialize>
+<Initialize> -> = <Rvalue> | ε
+<Rvalue> -> <Expression> | { <Multiple-Data> }
+<Multiple-Data> -> <Number> <Number-Closure>
+<Number-Closure> -> , <Number> <Number-Closure> | ε
+<Declaration-Closure> -> , <Declaration> <Declaration-Closure> | ε
+<Function-Block> -> <Declaration-Statement-Closure> <Function-Block-Closure>
+<Declaration-Statement-Closure> -> <Declaration-Statement> <Declaration-Statement-Closure> | ε
+<Declaration-Statement> -> <Declaration> ;
+<Function-Block-Closure> -> <Assignment-Function> <Function-Block-Closure> | <For-Loop> <Function-Block-Closure> | <Conditional-Statement> <Function-Block-Closure> | <Function-Return> <Function-Block-Closure> | ε
+<Assignment-Function> -> <Variable> <Assignment-or-Function-Call>
+<Assignment-or-Function-Call> -> = <Rvalue> ; | ( <Parameter-List> ) ;
+<Parameter-List> -> <Parameter> <Parameter-Closure>
+<Parameter-Closure> -> , <Parameter> <Parameter-Closure> | ε
+<Parameter> -> <Identifier> | <Number> | <String>
+<String> -> string
+<For-Loop> -> for ( <Assignment-Function> <Logical-Expression> ; <Suffix-Expression> ) { <Function-Block> }
+<Logical-Expression> -> <Expression> <Logical-Operator> <Expression>
+<Logical-Operator> -> == | != | > | < | >= | <=
+<Suffix-Expression> -> <Variable> <Suffix-Operator>
+<Suffix-Operator> -> ++ | -- 
+<Conditional-Statement> -> if ( <Logical-Expression> ) { <Function-Block> } <Else-Statement>
+<Else-Statement> -> else { <Function-Block> } | ε
+<Function-Return> -> return <Factors> ;

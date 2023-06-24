@@ -1,0 +1,29 @@
+<type , int> <id , main> <( , (> <type , int> <id , argc> <, , ,> <type , char> <* , *> <id , argv> <[ , [> <digit , 100> <] , ]> <) , )> 
+<{ , {> 
+<static , static> <type , double> <id , pi> <= , => <digit , 3> <; , ;> 
+<const , const> <type , int> <id , a> <= , => <digit , 7> <; , ;> 
+<const , const> <type , int> <id , b> <= , => <digit , 9> <; , ;> 
+<type , int> <id , c> <= , => <id , a> <+ , +> <id , b> <; , ;> 
+<type , int> <id , d> <[ , [> <digit , 10> <] , ]> <= , => <{ , {> <digit , 6> <, , ,> <digit , 54> <, , ,> <digit , 52> <, , ,> <digit , 34> <, , ,> <digit , 55> <, , ,> <digit , 68> <, , ,> <digit , 10> <, , ,> <digit , 90> <, , ,> <digit , 78> <, , ,> <digit , 56> <} , }> <; , ;> 
+<type , int> <id , i> <; , ;> 
+<type , int> <id , sum> <= , => <digit , 0> <; , ;> 
+
+<if , if> <( , (> <id , a> <+ , +> <id , b> <> , >> <digit , 10> <) , )> 
+<{ , {> 
+<id , printf> <( , (> <string , "true"> <) , )> <; , ;> 
+<} , }> 
+<else , else> 
+<{ , {> 
+<id , printf> <( , (> <string , "false"> <) , )> <; , ;> 
+<} , }> 
+
+<for , for> <( , (> <id , i> <= , => <digit , 0> <; , ;> <id , i> << , <> <digit , 10> <; , ;> <id , i> <++ , ++> <) , )> 
+<{ , {> 
+<id , sum> <= , => <id , sum> <+ , +> <id , d> <[ , [> <id , i> <] , ]> <; , ;> 
+<} , }> 
+
+<id , printf> <( , (> <id , c> <) , )> <; , ;> 
+<id , printf> <( , (> <id , sum> <) , )> <; , ;> 
+<id , printf> <( , (> <string , "HelloWorld"> <) , )> <; , ;> 
+<return , return> <digit , 0> <; , ;> 
+<} , }> 

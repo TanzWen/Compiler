@@ -1,4 +1,4 @@
-*.txt
+
 !CMakeLists.txt
 # CMake build directory
 build/
