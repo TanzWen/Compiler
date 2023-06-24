@@ -1,10 +1,10 @@
-#include "LALR_1.h"
+#include "LR_1.h"
 #define eps "\u03b5"
 
 table_item::table_item() : action(""), next(-1) {}
 table_item::table_item(int n) : action(""), next(n) {}
 table_item::table_item(string a, int n) : action(a), next(n) {}
-table_item::table_item(string a, LALR_1_grammer &g) : action(a), next(-1), gram(g) {}
+table_item::table_item(string a, LR_1_grammer &g) : action(a), next(-1), gram(g) {}
 table_item::~table_item() {}
 string table_item::to_string()
 {
@@ -24,8 +24,8 @@ string table_item::to_string()
     return s;
 }
 
-LALR_1::LALR_1() {}
-void LALR_1::add_grammer(vector<string> &v0)
+LR_1::LR_1() {}
+void LR_1::add_grammer(vector<string> &v0)
 {
     /* 分离文法 */
     for (string str : v0)
@@ -39,7 +39,7 @@ void LALR_1::add_grammer(vector<string> &v0)
         if (grammer.empty())
         { // 拓广文法
             start = left;
-            LALR_1_grammer temp(start + '\'', {start});
+            LR_1_grammer temp(start + '\'', {start});
             grammer.push_back(temp);
         }
 
@@ -51,8 +51,8 @@ void LALR_1::add_grammer(vector<string> &v0)
             { // 遇到 "|" or 该行结束
                 if (right == "|")
                     v.pop_back();
-                LALR_1_grammer temp(left, v);
-
+                LR_1_grammer temp(left, v);
+                temp.gram_size = temp.right.size();
                 grammer.push_back(temp);
                 v.clear();
             }
@@ -158,19 +158,19 @@ void LALR_1::add_grammer(vector<string> &v0)
         }
     }
 
-    /* 根据文法计算出 DFA */
-    // 初始化 DFA
+    /* 根据文法计算出 LR_1_DFA */
+    // 初始化 LR_1_DFA
     shred_data::grammer = grammer;
     shred_data::v_t = v_t; // 终结符集合
     shred_data::v_n = v_n; // 非终结符集合
     shred_data::first = first;
     shred_data::follow = follow;
 
-    LALR_1_DFA dfa;
+    LR_1_DFA dfa;
     dfa.init();
-    dfa.show();
+    // dfa.show();
 
-    /* 根据 DFA 构建 LR(0) 分析表 */
+    /* 根据 LR_1_DFA 构建 LR(0) 分析表 */
     for (auto &n : dfa.head_list.list)
     {
         for (auto &g : n.grammers)
@@ -180,7 +180,7 @@ void LALR_1::add_grammer(vector<string> &v0)
                 for (string str : follow[g.left])
                 {
                     table_item item("reduce", g);
-                    LALR_1_prasing_table[n.id][str] = item;
+                    LR_1_prasing_table[n.id][str] = item;
                 }
             }
             if (g.dot == g.right.size())
@@ -188,21 +188,12 @@ void LALR_1::add_grammer(vector<string> &v0)
                 if (g.left == start + "\'")
                 {
                     table_item item("acc", -1);
-                    LALR_1_prasing_table[n.id]["$"] = item;
+                    LR_1_prasing_table[n.id]["$"] = item;
                 }
                 else
                 {
-                    // for (auto &str : follow[g.left])
-                    // {
-                    //     table_item item("reduce", g);
-                    //     LALR_1_prasing_table[n.id][str] = item;
-                    // }
-
                     table_item item("reduce", g);
-                    for (auto &str : g.search)
-                    {
-                        LALR_1_prasing_table[n.id][str] = item;
-                    }
+                    LR_1_prasing_table[n.id][g.search] = item;
                 }
             }
         }
@@ -211,21 +202,21 @@ void LALR_1::add_grammer(vector<string> &v0)
             if (v_t.count(i.first))
             { // 是终结符
                 table_item item("shift", i.second);
-                LALR_1_prasing_table[n.id][i.first] = item;
+                LR_1_prasing_table[n.id][i.first] = item;
             }
             else if (v_n.count(i.first))
             { // 是非终结符
                 table_item item("goto", i.second);
-                LALR_1_prasing_table[n.id][i.first] = item;
+                LR_1_prasing_table[n.id][i.first] = item;
             }
         }
     }
 }
-void LALR_1::show_dfa()
+void LR_1::show_dfa()
 {
     dfa.show();
 }
-void LALR_1::show_grammer()
+void LR_1::show_grammer()
 {
     /** 输出该文法规则的相关信息
      *
@@ -280,17 +271,17 @@ void LALR_1::show_grammer()
         cout << "}" << endl;
     }
     cout << endl
-         << "LALR(1) Parsing Table:" << endl;
-    for (int i = 0; i < LALR_1_prasing_table.size(); i++)
+         << "LR(1) Parsing Table:" << endl;
+    for (int i = 0; i < LR_1_prasing_table.size(); i++)
     {
         cout << i << " : { ";
-        for (auto &j : LALR_1_prasing_table[i])
+        for (auto &j : LR_1_prasing_table[i])
         {
             cout << j.first << " : " << j.second.to_string() << " ";
         }
         cout << "}" << endl;
     }
-    // for (auto &i : LALR_1_prasing_table)
+    // for (auto &i : LR_1_prasing_table)
     // {
     //     cout << i.first << " : { ";
     //     for (auto &j : i.second)
@@ -302,9 +293,21 @@ void LALR_1::show_grammer()
 
     cout << endl;
 }
-bool LALR_1::LALR_1_check(string &str)
+void LR_1::DFS(tree_node *root)
 {
-    /** LR(0) 分析过程
+    out << root->id << " [label=\"" << root->name << "\\n"
+        << root->value << "\"];" << endl;
+    if (root->children.empty())
+        out << root->id << " [shape=box];" << endl;
+    for (auto &i : root->children)
+    {
+        out << root->id << " -> " << i->id << endl;
+        DFS(i);
+    }
+}
+bool LR_1::LR_1_check(string &str)
+{
+    /** LR(1) 分析过程
      *
      * 1. 初始化分析栈
      * 2. 初始化输入串
@@ -312,6 +315,7 @@ bool LALR_1::LALR_1_check(string &str)
      * 4. 初始化分析过程
      * 5. 分析过程
      */
+    stack<tree_node *> tree_stack;
     stack<string> stack;
     queue<string> queue;
     stack.push("$");
@@ -333,7 +337,7 @@ bool LALR_1::LALR_1_check(string &str)
     {
         int node_id = stoi(stack.top());
         string input = queue.front();
-        table_item item = LALR_1_prasing_table[node_id][input];
+        table_item item = LR_1_prasing_table[node_id][input];
         cout << "action: " << item.to_string() << endl
              << endl;
 
@@ -354,11 +358,43 @@ bool LALR_1::LALR_1_check(string &str)
                 stack.pop();
             node_id = stoi(stack.top());
             stack.push(item.gram.left);
-            stack.push(to_string(LALR_1_prasing_table[node_id][item.gram.left].next));
+            stack.push(to_string(LR_1_prasing_table[node_id][item.gram.left].next));
+
+            tree_node *node = new tree_node(item.gram.left);
+            node->children.resize(item.gram.right.size());
+            for (int i = item.gram.right.size() - 1; i >= 0; i--)
+            {
+                if (v_t.count(item.gram.right[i]) || item.gram.right[i] == eps)
+                {
+                    node->children[i] = new tree_node(item.gram.right[i]);
+                    node->children[i]->value = item.gram.right[i];
+                }
+                else
+                {
+                    node->children[i] = tree_stack.top();
+                    tree_stack.pop();
+                }
+            }
+            if (node->is_leaf())
+                node->value = node->name;
+            else
+            {
+                for (auto &i : node->children)
+                    if (i->value != eps && i->value != "")
+                        node->value += " " + i->value;
+            }
+            tree_stack.push(node);
         }
         else if (item.action == "acc")
         {
             cout << "acc" << endl;
+            root = tree_stack.top();
+            // root->DFS();
+            out.open("./output/grammer_tree.dot", ios::out);
+            out << "digraph G {" << endl;
+            DFS(root);
+            out << "}" << endl;
+            out.close();
             return true;
         }
         else
@@ -374,15 +410,155 @@ bool LALR_1::LALR_1_check(string &str)
         cout << endl;
     }
 }
+bool LR_1::LR_1_check(queue<string> &token_name, queue<string> &token_value)
+{
+    /** LR(1) 分析过程
+     *
+     * 1. 初始化分析栈
+     * 2. 初始化输入串
+     * 3. 初始化分析表
+     * 4. 初始化分析过程
+     * 5. 分析过程
+     */
+    stack<tree_node *> tree_stack;
+    stack<string> stack;
+    stack.push("$");
+    stack.push("0");
+    token_name.push("$");
+    cout << "stack: ";
+    show_stack(stack);
+    cout << endl
+         << "queue: ";
+    show_queue(token_name);
+    cout << endl;
+    while (true)
+    {
+        int node_id = stoi(stack.top());
+        string input = token_name.front();
+        table_item item = LR_1_prasing_table[node_id][input];
+        cout << "action: " << item.to_string() << endl
+             << endl;
+
+        if (item.action == "shift")
+        {
+            stack.push(input);
+            stack.push(to_string(item.next));
+            token_name.pop();
+        }
+        else if (item.action == "reduce")
+        {
+            int n;
+            if (item.gram.right.front() == eps)
+                n = 0;
+            else
+                n = item.gram.right.size() * 2;
+            for (int i = 0; i < n; i++)
+                stack.pop();
+            node_id = stoi(stack.top());
+            stack.push(item.gram.left);
+            stack.push(to_string(LR_1_prasing_table[node_id][item.gram.left].next));
+
+            tree_node *node = new tree_node(item.gram.left);
+            node->children.resize(item.gram.right.size());
+            for (int i = item.gram.right.size() - 1; i >= 0; i--)
+            {
+                if (v_t.count(item.gram.right[i]))
+                {
+                    // node->children[i] = new tree_node(item.gram.right[i]);
+                    // node->children[i]->value = token_value.front();
+                    // token_value.pop();
+
+                    node->children[i] = new tree_node(item.gram.right[i]);
+                    node->children[i]->value = item.gram.right[i];
+                }
+                else if (item.gram.right[i] == eps)
+                {
+                    node->children[i] = new tree_node(item.gram.right[i]);
+                    node->children[i]->value = item.gram.right[i];
+                }
+                else
+                {
+                    node->children[i] = tree_stack.top();
+                    tree_stack.pop();
+                }
+            }
+            // if (node->is_leaf())
+            //     node->value = node->name;
+            // else
+            // {
+            //     for (auto &i : node->children)
+            //         if (i->value != eps && i->value != "")
+            //             node->value += " " + i->value;
+            // }
+            tree_stack.push(node);
+        }
+        else if (item.action == "acc")
+        {
+            cout << "acc" << endl;
+            root = tree_stack.top();
+            root->DFS(token_value);
+            out.open("./output/grammer_tree.dot", ios::out);
+            out << "digraph G {" << endl;
+            DFS(root);
+            out << "}" << endl;
+            out.close();
+            return true;
+        }
+        else
+        {
+            
+            cout << "error" << endl;
+            return false;
+        }
+        cout << "stack: ";
+        show_stack(stack);
+        cout << endl
+             << "queue: ";
+        show_queue(token_name);
+        cout << endl;
+    }
+}
 
 /* 输出格式控制 */
-void LALR_1::show_stack(stack<string> &s)
+void LR_1::show_stack(stack<string> &s)
 {
     for (stack<string> temp = s; !temp.empty(); temp.pop())
         cout << temp.top() << " ";
 }
-void LALR_1::show_queue(queue<string> &q)
+void LR_1::show_queue(queue<string> &q)
 {
     for (queue<string> temp = q; !temp.empty(); temp.pop())
         cout << temp.front() << " ";
+}
+int tree_node::count = 0;
+void tree_node::DFS()
+{
+    if (is_leaf())
+        cout << name << endl;
+    for (auto &i : children)
+    {
+        i->DFS();
+    }
+}
+void tree_node::DFS(queue<string> &token_value)
+{
+    if (is_leaf() && value != eps)
+    {
+        value = token_value.front();
+        token_value.pop();
+        if(name == "string")
+        {
+            value.replace(0,1,"\\\"");
+            value.replace(value.size()-1,1,"\\\"");
+        }
+    }
+    for (auto &i : children)
+    {
+        i->DFS(token_value);
+        if (i->value != eps && i->value != "")
+            if (value == "")
+                value += i->value;
+            else
+                value += " " + i->value;
+    }
 }
