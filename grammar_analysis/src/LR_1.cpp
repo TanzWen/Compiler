@@ -24,7 +24,16 @@ string table_item::to_string()
     return s;
 }
 
-LR_1::LR_1() {}
+LR_1::LR_1()
+{
+    out.open("./output/grammer_tree.dot", ios::out);
+    out2.open("./output/analysis_process.txt", ios::out);
+}
+LR_1::~LR_1()
+{
+    out.close();
+    out2.close();
+}
 void LR_1::add_grammer(vector<string> &v0)
 {
     /* 分离文法 */
@@ -305,111 +314,6 @@ void LR_1::DFS(tree_node *root)
         DFS(i);
     }
 }
-bool LR_1::LR_1_check(string &str)
-{
-    /** LR(1) 分析过程
-     *
-     * 1. 初始化分析栈
-     * 2. 初始化输入串
-     * 3. 初始化分析表
-     * 4. 初始化分析过程
-     * 5. 分析过程
-     */
-    stack<tree_node *> tree_stack;
-    stack<string> stack;
-    queue<string> queue;
-    stack.push("$");
-    stack.push("0");
-    stringstream ss(str);
-    string temp;
-    while (ss >> temp)
-    {
-        queue.push(temp);
-    }
-    queue.push("$");
-    cout << "stack: ";
-    show_stack(stack);
-    cout << endl
-         << "queue: ";
-    show_queue(queue);
-    cout << endl;
-    while (true)
-    {
-        int node_id = stoi(stack.top());
-        string input = queue.front();
-        table_item item = LR_1_prasing_table[node_id][input];
-        cout << "action: " << item.to_string() << endl
-             << endl;
-
-        if (item.action == "shift")
-        {
-            stack.push(input);
-            stack.push(to_string(item.next));
-            queue.pop();
-        }
-        else if (item.action == "reduce")
-        {
-            int n;
-            if (item.gram.right.front() == eps)
-                n = 0;
-            else
-                n = item.gram.right.size() * 2;
-            for (int i = 0; i < n; i++)
-                stack.pop();
-            node_id = stoi(stack.top());
-            stack.push(item.gram.left);
-            stack.push(to_string(LR_1_prasing_table[node_id][item.gram.left].next));
-
-            tree_node *node = new tree_node(item.gram.left);
-            node->children.resize(item.gram.right.size());
-            for (int i = item.gram.right.size() - 1; i >= 0; i--)
-            {
-                if (v_t.count(item.gram.right[i]) || item.gram.right[i] == eps)
-                {
-                    node->children[i] = new tree_node(item.gram.right[i]);
-                    node->children[i]->value = item.gram.right[i];
-                }
-                else
-                {
-                    node->children[i] = tree_stack.top();
-                    tree_stack.pop();
-                }
-            }
-            if (node->is_leaf())
-                node->value = node->name;
-            else
-            {
-                for (auto &i : node->children)
-                    if (i->value != eps && i->value != "")
-                        node->value += " " + i->value;
-            }
-            tree_stack.push(node);
-        }
-        else if (item.action == "acc")
-        {
-            cout << "acc" << endl;
-            root = tree_stack.top();
-            // root->DFS();
-            out.open("./output/grammer_tree.dot", ios::out);
-            out << "digraph G {" << endl;
-            DFS(root);
-            out << "}" << endl;
-            out.close();
-            return true;
-        }
-        else
-        {
-            cout << "error" << endl;
-            return false;
-        }
-        cout << "stack: ";
-        show_stack(stack);
-        cout << endl
-             << "queue: ";
-        show_queue(queue);
-        cout << endl;
-    }
-}
 bool LR_1::LR_1_check(queue<string> &token_name, queue<string> &token_value)
 {
     /** LR(1) 分析过程
@@ -425,18 +329,18 @@ bool LR_1::LR_1_check(queue<string> &token_name, queue<string> &token_value)
     stack.push("$");
     stack.push("0");
     token_name.push("$");
-    cout << "stack: ";
+    out2 << "stack: ";
     show_stack(stack);
-    cout << endl
+    out2 << endl
          << "queue: ";
     show_queue(token_name);
-    cout << endl;
+    out2 << endl;
     while (true)
     {
         int node_id = stoi(stack.top());
         string input = token_name.front();
         table_item item = LR_1_prasing_table[node_id][input];
-        cout << "action: " << item.to_string() << endl
+        out2 << "action: " << item.to_string() << endl
              << endl;
 
         if (item.action == "shift")
@@ -497,25 +401,22 @@ bool LR_1::LR_1_check(queue<string> &token_name, queue<string> &token_value)
             cout << "acc" << endl;
             root = tree_stack.top();
             root->DFS(token_value);
-            out.open("./output/grammer_tree.dot", ios::out);
             out << "digraph G {" << endl;
             DFS(root);
             out << "}" << endl;
-            out.close();
             return true;
         }
         else
         {
-            
             cout << "error" << endl;
             return false;
         }
-        cout << "stack: ";
+        out2 << "stack: ";
         show_stack(stack);
-        cout << endl
+        out2 << endl
              << "queue: ";
         show_queue(token_name);
-        cout << endl;
+        out2 << endl;
     }
 }
 
@@ -523,12 +424,12 @@ bool LR_1::LR_1_check(queue<string> &token_name, queue<string> &token_value)
 void LR_1::show_stack(stack<string> &s)
 {
     for (stack<string> temp = s; !temp.empty(); temp.pop())
-        cout << temp.top() << " ";
+        out2 << temp.top() << " ";
 }
 void LR_1::show_queue(queue<string> &q)
 {
     for (queue<string> temp = q; !temp.empty(); temp.pop())
-        cout << temp.front() << " ";
+        out2 << temp.front() << " ";
 }
 int tree_node::count = 0;
 void tree_node::DFS()
@@ -546,10 +447,10 @@ void tree_node::DFS(queue<string> &token_value)
     {
         value = token_value.front();
         token_value.pop();
-        if(name == "string")
+        if (name == "string")
         {
-            value.replace(0,1,"\\\"");
-            value.replace(value.size()-1,1,"\\\"");
+            value.replace(0, 1, "\\\"");
+            value.replace(value.size() - 1, 1, "\\\"");
         }
     }
     for (auto &i : children)

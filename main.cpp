@@ -34,10 +34,7 @@ int main()
         if (name == "operator")
             op = dfa;
     }
-    for (auto &i : lex)
-    {
-        cout << i->get_token_name() << endl;
-    }
+    
 
     fstream file;
     vector<string> v;

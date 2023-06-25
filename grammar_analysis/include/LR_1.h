@@ -76,12 +76,14 @@ private:
     LR_1_DFA dfa;
     string start;
     fstream out;
+    fstream out2;
 
     void show_stack(stack<string> &s);
     void show_queue(queue<string> &q);
 
 public:
     LR_1();
+    ~LR_1();
     void add_grammer(vector<string> &v0);
     void show_grammer();
     void show_dfa();
