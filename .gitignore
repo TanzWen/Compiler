@@ -2,7 +2,7 @@
 !CMakeLists.txt
 # CMake build directory
 build/
-
+report/
 # Ignore object files, executables, and libraries
 *.o
 *.obj
